@@ -1,8 +1,5 @@
 import 'source-map-support/register'
 
-import * as AWS from 'aws-sdk'
-import * as uuid from 'uuid'
-
 import {
   APIGatewayProxyEvent,
   APIGatewayProxyHandler,
@@ -10,9 +7,12 @@ import {
 } from 'aws-lambda'
 
 import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
-import { parseUserId } from '../../auth/utils'
+import { DynamoDB } from 'aws-sdk'
+import { TodoItem } from '../../models/TodoItem'
+import { getUserIdFromJwt } from '../../auth/utils'
+import { v4 as uuid } from 'uuid'
 
-const docClient = new AWS.DynamoDB.DocumentClient()
+const docClient = new DynamoDB.DocumentClient()
 
 const todosTable = process.env.TODOS_TABLE
 
@@ -20,27 +20,25 @@ export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   console.log('Processing event: ', event)
-  const newTodo: CreateTodoRequest = JSON.parse(event.body)
-  console.log('TCL: newTodo', newTodo)
+  const { name, dueDate }: CreateTodoRequest = JSON.parse(event.body)
 
-  const itemId = uuid.v4()
+  const todoId = uuid()
+  const userId = getUserIdFromJwt(event)
   const createdAt = new Date().toJSON()
 
-  const authorization = event.headers.Authorization
-  const split = authorization.split(' ')
-  const jwtToken = split[1]
-
-  const newItem = {
-    todoId: itemId,
+  const Item: TodoItem = {
+    todoId,
+    userId,
     createdAt,
-    userId: parseUserId(jwtToken),
-    ...newTodo
+    name,
+    dueDate,
+    done: false
   }
 
   await docClient
     .put({
       TableName: todosTable,
-      Item: newItem
+      Item
     })
     .promise()
 
@@ -51,7 +49,7 @@ export const handler: APIGatewayProxyHandler = async (
       'Access-Control-Allow-Credentials': true
     },
     body: JSON.stringify({
-      newItem
+      Item
     })
   }
 }

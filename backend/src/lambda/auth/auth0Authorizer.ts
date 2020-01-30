@@ -6,18 +6,14 @@ import { decode, verify } from 'jsonwebtoken'
 import Axios from 'axios'
 import { Jwt } from '../../auth/Jwt'
 import { JwtPayload } from '../../auth/JwtPayload'
-import { createLogger } from '../../utils/logger'
 
-const logger = createLogger('auth')
 const jwksUrl = 'https://dev-hw08mj11.eu.auth0.com/.well-known/jwks.json'
 
 export const handler = async (
   event: CustomAuthorizerEvent
 ): Promise<CustomAuthorizerResult> => {
-  logger.info('Authorizing a user', event.authorizationToken)
   try {
     const jwtToken = await verifyToken(event.authorizationToken)
-    logger.info('User was authorized', jwtToken)
 
     return {
       principalId: jwtToken.sub,
@@ -33,8 +29,6 @@ export const handler = async (
       }
     }
   } catch (e) {
-    logger.error('User not authorized', { error: e.message })
-
     return {
       principalId: 'user',
       policyDocument: {
@@ -49,6 +43,13 @@ export const handler = async (
       }
     }
   }
+}
+
+// Code snippet from https://gist.github.com/chatu/7738411c7e8dcf604bc5a0aad7937299
+function certToPEM(cert) {
+  cert = cert.match(/.{1,64}/g).join('\n')
+  cert = `-----BEGIN CERTIFICATE-----\n${cert}\n-----END CERTIFICATE-----\n`
+  return cert
 }
 
 async function verifyToken(authHeader: string): Promise<JwtPayload> {

@@ -1,16 +1,18 @@
 import 'source-map-support/register'
 
-import * as AWS from 'aws-sdk'
-
 import {
   APIGatewayProxyEvent,
   APIGatewayProxyHandler,
   APIGatewayProxyResult
 } from 'aws-lambda'
 
-const docClient = new AWS.DynamoDB.DocumentClient()
+import { DynamoDB } from 'aws-sdk'
+import { getUserIdFromJwt } from '../../auth/utils'
 
-const todosTable = process.env.TODOS_TABLE
+const todosTable = process.env.TODO_TABLE
+const indexName = process.env.INDEX_NAME
+
+const docClient = new DynamoDB.DocumentClient()
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
@@ -19,7 +21,10 @@ export const handler: APIGatewayProxyHandler = async (
 
   const result = await docClient
     .scan({
-      TableName: todosTable
+      TableName: todosTable,
+      IndexName: indexName,
+      FilterExpression: 'userId=:user',
+      ExpressionAttributeValues: { ':user': getUserIdFromJwt(event) }
     })
     .promise()
 
