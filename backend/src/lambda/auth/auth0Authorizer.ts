@@ -1,6 +1,7 @@
 import 'source-map-support/register'
 
 import { CustomAuthorizerEvent, CustomAuthorizerResult } from 'aws-lambda'
+import { Jwks, Key } from '../../auth/Jwks'
 import { decode, verify } from 'jsonwebtoken'
 
 import Axios from 'axios'
@@ -53,15 +54,29 @@ function certToPEM(cert) {
 }
 
 async function verifyToken(authHeader: string): Promise<JwtPayload> {
+  // const token = getToken(authHeader)
+  // const jwt: Jwt = decode(token, { complete: true }) as Jwt
+  // const { data } = await Axios.get(jwksUrl)
+
+  // const signingKey = data.keys.find(key => key.kid === jwt.header.kid)
+
+  // const cert: string = signingKey.x5c[0]
+
+  // return verify(token, cert, { algorithms: ['RS256'] }) as JwtPayload
+  const jwks: Jwks = await Axios.get(jwksUrl)
+  // Extract the JWT from the request's authorization header.
   const token = getToken(authHeader)
   const jwt: Jwt = decode(token, { complete: true }) as Jwt
-  const { data } = await Axios.get(jwksUrl)
-
-  const signingKey = data.keys.find(key => key.kid === jwt.header.kid)
-
-  const cert: string = signingKey.x5c[0]
-
-  return verify(token, cert, { algorithms: ['RS256'] }) as JwtPayload
+  // Decode the JWT and grab the kid property from the header.
+  const authHdrKid = jwt.header.kid
+  // Find a signing key in the filtered JWKS with a matching kid property
+  const signingKey: Key = jwks.keys.filter(key => key.kid == authHdrKid)[0]
+  // Using the x5c property build a certificate which will be used to verify the JWT signature.
+  const pem = certToPEM(signingKey.x5c[0])
+  // Ensure the JWT contains the expected audience, issuer, expiration, etc.
+  verify(token, pem)
+  // This is async function, so return the result as a promise that resolves to the payload
+  return Promise.resolve(jwt.payload)
 }
 
 function getToken(authHeader: string): string {
