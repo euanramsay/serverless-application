@@ -21,11 +21,11 @@ export const handler: APIGatewayProxyHandler = async (
     const userId = getUserIdFromJwt(event)
 
     const { Items } = await docClient
-      .scan({
+      .query({
         TableName,
         IndexName,
-        FilterExpression: 'userId=:user',
-        ExpressionAttributeValues: { ':user': userId }
+        KeyConditionExpression: 'userId = :userIdValue',
+        ExpressionAttributeValues: { ':userIdValue': userId }
       })
       .promise()
 
