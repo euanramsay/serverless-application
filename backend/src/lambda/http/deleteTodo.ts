@@ -6,12 +6,38 @@ import {
   APIGatewayProxyResult
 } from 'aws-lambda'
 
+import { DynamoDB } from 'aws-sdk'
+
+const docClient = new DynamoDB.DocumentClient()
+const TableName = process.env.TODOS_TABLE
+
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  const todoId = event.pathParameters.todoId
-  console.log('TCL: todoId', todoId)
+  const { todoId } = event.pathParameters
 
-  // TODO: Remove a TODO item by id
-  return undefined
+  try {
+    await docClient
+      .delete({
+        TableName,
+        Key: { todoId }
+      })
+      .promise()
+
+    return {
+      statusCode: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: ''
+    }
+  } catch (e) {
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: e.message
+    }
+  }
 }

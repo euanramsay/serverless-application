@@ -1,5 +1,7 @@
 import 'source-map-support/register'
 
+import * as AWS from 'aws-sdk'
+
 import {
   APIGatewayProxyEvent,
   APIGatewayProxyHandler,
@@ -9,9 +11,18 @@ import {
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  const todoId = event.pathParameters.todoId
-  console.log('TCL: todoId', todoId)
-
-  // TODO: Return a presigned URL to upload a file for a TODO item with the provided id
-  return undefined
+  const { todoId } = event.pathParameters
+  const s3 = new AWS.S3({ signatureVersion: 'v4' })
+  const uploadUrl = s3.getSignedUrl('putObject', {
+    Bucket: process.env.FILE_UPLOAD_S3_BUCKET,
+    Key: todoId,
+    Expires: 300
+  })
+  return {
+    statusCode: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+    },
+    body: JSON.stringify({ uploadUrl })
+  }
 }

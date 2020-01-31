@@ -9,34 +9,40 @@ import {
 import { DynamoDB } from 'aws-sdk'
 import { getUserIdFromJwt } from '../../auth/utils'
 
-const todosTable = process.env.TODO_TABLE
-const indexName = process.env.INDEX_NAME
-
 const docClient = new DynamoDB.DocumentClient()
+
+const TableName = process.env.TODOS_TABLE
+const IndexName = process.env.INDEX_NAME
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  console.log('Processing event: ', event)
+  try {
+    const userId = getUserIdFromJwt(event)
 
-  const result = await docClient
-    .scan({
-      TableName: todosTable,
-      IndexName: indexName,
-      FilterExpression: 'userId=:user',
-      ExpressionAttributeValues: { ':user': getUserIdFromJwt(event) }
-    })
-    .promise()
+    const { Items } = await docClient
+      .scan({
+        TableName,
+        IndexName,
+        FilterExpression: 'userId=:user',
+        ExpressionAttributeValues: { ':user': userId }
+      })
+      .promise()
 
-  const items = result.Items
-
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*'
-    },
-    body: JSON.stringify({
-      items
-    })
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ items: Items })
+    }
+  } catch (e) {
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: e.message
+    }
   }
 }

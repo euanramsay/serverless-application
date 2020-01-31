@@ -13,43 +13,50 @@ import { getUserIdFromJwt } from '../../auth/utils'
 import { v4 as uuid } from 'uuid'
 
 const docClient = new DynamoDB.DocumentClient()
-
-const todosTable = process.env.TODOS_TABLE
+const TableName = process.env.TODOS_TABLE
+const fileUploadS3Bucket = process.env.FILE_UPLOAD_S3_BUCKET
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  console.log('Processing event: ', event)
-  const { name, dueDate }: CreateTodoRequest = JSON.parse(event.body)
+  try {
+    const todoId = uuid()
+    const userId = getUserIdFromJwt(event)
+    const createdAt = new Date().toJSON()
+    const { name, dueDate }: CreateTodoRequest = JSON.parse(event.body)
+    const attachmentUrl = `https://${fileUploadS3Bucket}.s3.us-east-1.amazonaws.com/${todoId}`
 
-  const todoId = uuid()
-  const userId = getUserIdFromJwt(event)
-  const createdAt = new Date().toJSON()
+    const Item: TodoItem = {
+      todoId,
+      userId,
+      createdAt,
+      name,
+      dueDate,
+      done: false,
+      attachmentUrl
+    }
 
-  const Item: TodoItem = {
-    todoId,
-    userId,
-    createdAt,
-    name,
-    dueDate,
-    done: false
-  }
+    await docClient
+      .put({
+        TableName,
+        Item
+      })
+      .promise()
 
-  await docClient
-    .put({
-      TableName: todosTable,
-      Item
-    })
-    .promise()
-
-  return {
-    statusCode: 201,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': true
-    },
-    body: JSON.stringify({
-      Item
-    })
+    return {
+      statusCode: 201,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify(Item)
+    }
+  } catch (e) {
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: e.message
+    }
   }
 }

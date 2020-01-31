@@ -15,6 +15,7 @@ provider:
   environment:
     TODOS_TABLE: Todos-${self:provider.stage}
     TODOS_TABLE_ARN: 'arn:aws:dynamodb:us-east-1:*:table/${self:provider.environment.TODOS_TABLE}'
+    FILE_UPLOAD_S3_BUCKET: file-upload-s3-bucket-${self:provider.stage}
     INDEX_NAME: user-index
 
 functions:
@@ -103,3 +104,35 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
+
+    UploadBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.FILE_UPLOAD_S3_BUCKET}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        PolicyDocument:
+          Id: MyPolicy
+          Version: '2012-10-17'
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: ['s3:GetObject', 's3:Put*']
+              Resource: 'arn:aws:s3:::${self:provider.environment.FILE_UPLOAD_S3_BUCKET}/*'
+        Bucket: { Ref: UploadBucket }
