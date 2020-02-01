@@ -1,32 +1,31 @@
-# Serverless TODO
+# Serverless TODOS
 
-To implement this project, you need to implement a simple TODO application using AWS Lambda and Serverless framework. Search for all comments starting with the `TODO:` in the code to find the placeholders that you need to implement.
+To implement this project, you need to implement a simple TODOS application using AWS Lambda and Serverless framework. Search for all comments starting with the `TODOS:` in the code to find the placeholders that you need to implement.
 
 # Functionality of the application
 
-This application will allow creating/removing/updating/fetching TODO items. Each TODO item can optionally have an attachment image. Each user only has access to TODO items that he/she has created.
+This application will allow creating/removing/updating/fetching TODOS items. Each TODOS item can optionally have an attachment image. Each user only has access to TODOS items that he/she has created.
 
-# TODO items
+# TODOS items
 
-The application should store TODO items, and each TODO item contains the following fields:
+The application should store TODOS items, and each TODOS item contains the following fields:
 
-* `todoId` (string) - a unique id for an item
-* `createdAt` (string) - date and time when an item was created
-* `name` (string) - name of a TODO item (e.g. "Change a light bulb")
-* `dueDate` (string) - date and time by which an item should be completed
-* `done` (boolean) - true if an item was completed, false otherwise
-* `attachmentUrl` (string) (optional) - a URL pointing to an image attached to a TODO item
+- `todoId` (string) - a unique id for an item
+- `createdAt` (string) - date and time when an item was created
+- `name` (string) - name of a TODOS item (e.g. "Change a light bulb")
+- `dueDate` (string) - date and time by which an item should be completed
+- `done` (boolean) - true if an item was completed, false otherwise
+- `attachmentUrl` (string) (optional) - a URL pointing to an image attached to a TODOS item
 
-You might also store an id of a user who created a TODO item.
-
+You might also store an id of a user who created a TODOS item.
 
 # Functions to be implemented
 
 To implement this project, you need to implement the following functions and configure them in the `serverless.yml` file:
 
-* `Auth` - this function should implement a custom authorizer for API Gateway that should be added to all other functions.
+- `Auth` - this function should implement a custom authorizer for API Gateway that should be added to all other functions.
 
-* `GetTodos` - should return all TODOs for a current user. A user id can be extracted from a JWT token that is sent by the frontend
+- `GetTodos` - should return all TODOs for a current user. A user id can be extracted from a JWT token that is sent by the frontend
 
 It should return data that looks like this:
 
@@ -48,14 +47,14 @@ It should return data that looks like this:
       "dueDate": "2019-07-29T20:01:45.424Z",
       "done": true,
       "attachmentUrl": "http://example.com/image.png"
-    },
+    }
   ]
 }
 ```
 
-* `CreateTodo` - should create a new TODO for a current user. A shape of data send by a client application to this function can be found in the `CreateTodoRequest.ts` file
+- `CreateTodo` - should create a new TODOS for a current user. A shape of data send by a client application to this function can be found in the `CreateTodoRequest.ts` file
 
-It receives a new TODO item to be created in JSON format that looks like this:
+It receives a new TODOS item to be created in JSON format that looks like this:
 
 ```json
 {
@@ -67,7 +66,7 @@ It receives a new TODO item to be created in JSON format that looks like this:
 }
 ```
 
-It should return a new TODO item that looks like this:
+It should return a new TODOS item that looks like this:
 
 ```json
 {
@@ -82,9 +81,9 @@ It should return a new TODO item that looks like this:
 }
 ```
 
-* `UpdateTodo` - should update a TODO item created by a current user. A shape of data send by a client application to this function can be found in the `UpdateTodoRequest.ts` file
+- `UpdateTodo` - should update a TODOS item created by a current user. A shape of data send by a client application to this function can be found in the `UpdateTodoRequest.ts` file
 
-It receives an object that contains three fields that can be updated in a TODO item:
+It receives an object that contains three fields that can be updated in a TODOS item:
 
 ```json
 {
@@ -98,17 +97,17 @@ The id of an item that should be updated is passed as a URL parameter.
 
 It should return an empty body.
 
-* `DeleteTodo` - should delete a TODO item created by a current user. Expects an id of a TODO item to remove.
+- `DeleteTodo` - should delete a TODOS item created by a current user. Expects an id of a TODOS item to remove.
 
 It should return an empty body.
 
-* `GenerateUploadUrl` - returns a pre-signed URL that can be used to upload an attachment file for a TODO item.
+- `GenerateUploadUrl` - returns a pre-signed URL that can be used to upload an attachment file for a TODOS item.
 
 It should return a JSON object that looks like this:
 
 ```json
 {
-  "uploadUrl": "https://s3-bucket-name.s3.eu-west-2.amazonaws.com/image.png"
+  "uploadUrl": "https://s3-bucket-name.s3.us-east-1.amazonaws.com/image.png"
 }
 ```
 
@@ -117,7 +116,6 @@ All functions are already connected to appropriate events from API Gateway.
 An id of a user can be extracted from a JWT token passed by a client.
 
 You also need to add any necessary resources to the `resources` section of the `serverless.yml` file such as DynamoDB table and S3 bucket.
-
 
 # Frontend
 
@@ -160,21 +158,19 @@ logger.info('User was authorized', {
 })
 ```
 
-
 # Grading the submission
 
 Once you have finished developing your application, please set `apiId` and Auth0 parameters in the `config.ts` file in the `client` folder. A reviewer would start the React development server to run the frontend that should be configured to interact with your serverless application.
 
 **IMPORTANT**
 
-*Please leave your application running until a submission is reviewed. If implemented correctly it will cost almost nothing when your application is idle.*
+_Please leave your application running until a submission is reviewed. If implemented correctly it will cost almost nothing when your application is idle._
 
 # Suggestions
 
-To store TODO items, you might want to use a DynamoDB table with local secondary index(es). A create a local secondary index you need to create a DynamoDB resource like this:
+To store TODOS items, you might want to use a DynamoDB table with local secondary index(es). A create a local secondary index you need to create a DynamoDB resource like this:
 
 ```yml
-
 TodosTable:
   Type: AWS::DynamoDB::Table
   Properties:
@@ -201,7 +197,6 @@ TodosTable:
             KeyType: RANGE
         Projection:
           ProjectionType: ALL # What attributes will be copied to an index
-
 ```
 
 To query an index you need to use the `query()` method like:
@@ -241,7 +236,7 @@ npm install
 npm run start
 ```
 
-This should start a development server with the React application that will interact with the serverless TODO application.
+This should start a development server with the React application that will interact with the serverless TODOS application.
 
 # Postman collection
 
@@ -249,23 +244,20 @@ An alternative way to test your API, you can use the Postman collection that con
 
 Click on the import button:
 
-![Alt text](images/import-collection-1.png?raw=true "Image 1")
-
+![Alt text](images/import-collection-1.png?raw=true 'Image 1')
 
 Click on the "Choose Files":
 
-![Alt text](images/import-collection-2.png?raw=true "Image 2")
-
+![Alt text](images/import-collection-2.png?raw=true 'Image 2')
 
 Select a file to import:
 
-![Alt text](images/import-collection-3.png?raw=true "Image 3")
-
+![Alt text](images/import-collection-3.png?raw=true 'Image 3')
 
 Right click on the imported collection to set variables for the collection:
 
-![Alt text](images/import-collection-4.png?raw=true "Image 4")
+![Alt text](images/import-collection-4.png?raw=true 'Image 4')
 
 Provide variables for the collection (similarly to how this was done in the course):
 
-![Alt text](images/import-collection-5.png?raw=true "Image 5")
+![Alt text](images/import-collection-5.png?raw=true 'Image 5')

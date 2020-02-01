@@ -1,26 +1,29 @@
-import { CustomAuthorizerEvent, CustomAuthorizerResult } from 'aws-lambda'
 import 'source-map-support/register'
 
-import { verify, decode } from 'jsonwebtoken'
-import { createLogger } from '../../utils/logger'
+import { CustomAuthorizerEvent, CustomAuthorizerResult } from 'aws-lambda'
+import { Jwks, Key } from '../../auth/Jwks'
+import { Secret, decode, verify } from 'jsonwebtoken'
+
 import Axios from 'axios'
 import { Jwt } from '../../auth/Jwt'
 import { JwtPayload } from '../../auth/JwtPayload'
+import { createLogger } from '../../utils/logger'
 
 const logger = createLogger('auth')
 
-// TODO: Provide a URL that can be used to download a certificate that can be used
-// to verify JWT token signature.
-// To get this URL you need to go to an Auth0 page -> Show Advanced Settings -> Endpoints -> JSON Web Key Set
-const jwksUrl = '...'
+const jwksUrl = 'https://dev-hw08mj11.eu.auth0.com/.well-known/jwks.json'
 
 export const handler = async (
   event: CustomAuthorizerEvent
 ): Promise<CustomAuthorizerResult> => {
-  logger.info('Authorizing a user', event.authorizationToken)
+  logger.info('Authorising user', {
+    authorizationToken: event.authorizationToken
+  })
+
   try {
     const jwtToken = await verifyToken(event.authorizationToken)
-    logger.info('User was authorized', jwtToken)
+
+    logger.info('User authorised', { jwtToken })
 
     return {
       principalId: jwtToken.sub,
@@ -36,7 +39,7 @@ export const handler = async (
       }
     }
   } catch (e) {
-    logger.error('User not authorized', { error: e.message })
+    logger.error('User not authorised', { error: e.message })
 
     return {
       principalId: 'user',
@@ -54,14 +57,27 @@ export const handler = async (
   }
 }
 
-async function verifyToken(authHeader: string): Promise<JwtPayload> {
-  const token = getToken(authHeader)
-  const jwt: Jwt = decode(token, { complete: true }) as Jwt
+// Attributed to https://gist.github.com/chatu/7738411c7e8dcf604bc5a0aad7937299
+const certToPEM = (cert: string): Secret => {
+  cert = cert.match(/.{1,64}/g).join('\n')
+  cert = `-----BEGIN CERTIFICATE-----\n${cert}\n-----END CERTIFICATE-----\n`
+  return cert
+}
 
-  // TODO: Implement token verification
-  // You should implement it similarly to how it was implemented for the exercise for the lesson 5
-  // You can read more about how to do this here: https://auth0.com/blog/navigating-rs256-and-jwks/
-  return undefined
+// Attributed to https://auth0.com/blog/navigating-rs256-and-jwks/
+async function verifyToken(authHeader: string): Promise<JwtPayload> {
+  try {
+    const jwks: Jwks = await Axios.get(jwksUrl)
+    const token = getToken(authHeader)
+    const jwt: Jwt = decode(token, { complete: true }) as Jwt
+    const authHdrKid = jwt.header.kid
+    const signingKey: Key = jwks.keys.filter(key => key.kid == authHdrKid)[0]
+    const pem = certToPEM(signingKey.x5c[0])
+    verify(token, pem)
+    return Promise.resolve(jwt.payload)
+  } catch (e) {
+    console.error(e)
+  }
 }
 
 function getToken(authHeader: string): string {
