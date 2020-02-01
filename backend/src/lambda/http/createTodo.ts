@@ -9,12 +9,15 @@ import {
 import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
 import { DynamoDB } from 'aws-sdk'
 import { TodoItem } from '../../models/TodoItem'
+import { createLogger } from '../../utils/logger'
 import { getUserIdFromJwt } from '../../auth/utils'
 import { v4 as uuid } from 'uuid'
 
 const docClient = new DynamoDB.DocumentClient()
 const TableName = process.env.TODOS_TABLE
 const fileUploadS3Bucket = process.env.FILE_UPLOAD_S3_BUCKET
+
+const logger = createLogger('http')
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
@@ -36,12 +39,18 @@ export const handler: APIGatewayProxyHandler = async (
       attachmentUrl
     }
 
-    await docClient
-      .put({
-        TableName,
-        Item
-      })
-      .promise()
+    logger.info('Creating todo', { Item })
+
+    const todoToCreate = {
+      TableName,
+      Item
+    }
+
+    logger.info('Creating', { todoToCreate })
+
+    await docClient.put(todoToCreate).promise()
+
+    logger.info('Successfully created', { todoId })
 
     return {
       statusCode: 201,
@@ -51,6 +60,8 @@ export const handler: APIGatewayProxyHandler = async (
       body: JSON.stringify(Item)
     }
   } catch (e) {
+    logger.info('Error', { error: e })
+
     return {
       statusCode: 500,
       headers: {

@@ -88,15 +88,11 @@ resources:
         AttributeDefinitions:
           - AttributeName: todoId
             AttributeType: S
-          - AttributeName: createdAt
-            AttributeType: S
           - AttributeName: userId
             AttributeType: S
         KeySchema:
           - AttributeName: todoId
             KeyType: HASH
-          - AttributeName: createdAt
-            KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.TODOS_TABLE}
         GlobalSecondaryIndexes:
@@ -137,4 +133,4 @@ resources:
               Principal: '*'
               Action: ['s3:GetObject', 's3:Put*']
               Resource: 'arn:aws:s3:::${self:provider.environment.FILE_UPLOAD_S3_BUCKET}/*'
-        Bucket: { Ref: UploadBucket }
+        Bucket: !Ref UploadBucket
