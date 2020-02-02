@@ -6,11 +6,8 @@ import {
   APIGatewayProxyResult
 } from 'aws-lambda'
 
-import { DynamoDB } from 'aws-sdk'
 import { createLogger } from '../../utils/logger'
-
-const docClient = new DynamoDB.DocumentClient()
-const TableName = process.env.TODOS_TABLE
+import { deleteTodo } from '../../businessLogic/todos'
 
 const logger = createLogger('http')
 
@@ -18,20 +15,10 @@ export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   const { todoId } = event.pathParameters
-
-  logger.info('Deleting todo', { todoId })
-
-  const todoToDelete = {
-    TableName,
-    Key: {
-      todoId
-    }
-  }
-
-  logger.info('Deleting', { todoToDelete })
-
   try {
-    await docClient.delete(todoToDelete).promise()
+    logger.info('Deleting todo', { todoId })
+
+    await deleteTodo(todoId)
 
     logger.info('Successfully deleted', { todoId })
 
