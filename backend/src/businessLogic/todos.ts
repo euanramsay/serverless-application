@@ -30,6 +30,14 @@ export async function deleteTodo(todoId) {
   return todoAccess.deleteTodoData(todoId)
 }
 
+export async function getTodo(todoId): Promise<TodoItem> {
+  return todoAccess.getTodoData(todoId)
+}
+
 export async function getTodos(userId): Promise<TodoItem[]> {
   return todoAccess.getTodosData(userId)
+}
+
+export async function updateTodo(updatedItem) {
+  return todoAccess.updateTodoData(updatedItem)
 }
