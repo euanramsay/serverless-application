@@ -16,6 +16,54 @@ export class TodoAccess {
     private readonly indexName = process.env.INDEX_NAME
   ) {}
 
+  async createTodoData(todo: TodoItem): Promise<TodoItem> {
+    logger.info('Creating', { todo })
+
+    const putParams = {
+      TableName: this.todosTable,
+      Item: todo
+    }
+
+    logger.info('Update', { putParams })
+
+    await this.docClient.put(putParams).promise()
+
+    return todo
+  }
+
+  async deleteTodoData(todoId: string) {
+    logger.info('Deleting', { todoId })
+
+    const deleteParams = {
+      TableName: this.todosTable,
+      Key: {
+        todoId
+      }
+    }
+
+    logger.info('Update', { deleteParams })
+
+    await this.docClient.delete(deleteParams).promise()
+  }
+
+  getSignedUrlData(todoId: string) {
+    logger.info('Getting signed url', { todoId })
+
+    const s3 = new AWS.S3({ signatureVersion: 'v4' })
+
+    const getSignedUrlParams = {
+      Bucket: process.env.FILE_UPLOAD_S3_BUCKET,
+      Key: todoId,
+      Expires: 300
+    }
+
+    logger.info('Get signed url', { getSignedUrlParams })
+
+    const uploadUrl = s3.getSignedUrl('putObject', getSignedUrlParams)
+
+    return uploadUrl
+  }
+
   async getTodoData(todoId: string): Promise<TodoItem> {
     logger.info('Getting', { todoId })
 
@@ -51,37 +99,7 @@ export class TodoAccess {
     return items as TodoItem[]
   }
 
-  async createTodoData(todo: TodoItem): Promise<TodoItem> {
-    logger.info('Creating', { todo })
-
-    const putParams = {
-      TableName: this.todosTable,
-      Item: todo
-    }
-
-    logger.info('Update', { putParams })
-
-    await this.docClient.put(putParams).promise()
-
-    return todo
-  }
-
-  async deleteTodoData(todoId: string) {
-    logger.info('Deleting', { todoId })
-
-    const deleteParams = {
-      TableName: this.todosTable,
-      Key: {
-        todoId
-      }
-    }
-
-    logger.info('Update', { deleteParams })
-
-    await this.docClient.delete(deleteParams).promise()
-  }
-
-  async updateTodoData(updatedItem) {
+  async updateTodoData(updatedItem: TodoItem) {
     logger.info('Updating', { updatedItem })
 
     const { todoId, dueDate, done, name } = updatedItem

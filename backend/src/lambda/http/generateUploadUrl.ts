@@ -1,7 +1,5 @@
 import 'source-map-support/register'
 
-import * as AWS from 'aws-sdk'
-
 import {
   APIGatewayProxyEvent,
   APIGatewayProxyHandler,
@@ -9,6 +7,7 @@ import {
 } from 'aws-lambda'
 
 import { createLogger } from '../../utils/logger'
+import { getSignedUrl } from '../../businessLogic/todos'
 
 const logger = createLogger('http')
 
@@ -19,17 +18,7 @@ export const handler: APIGatewayProxyHandler = async (
 
   logger.info('Getting signed url', { todoId })
 
-  const s3 = new AWS.S3({ signatureVersion: 'v4' })
-
-  const todoToGetSignedUrl = {
-    Bucket: process.env.FILE_UPLOAD_S3_BUCKET,
-    Key: todoId,
-    Expires: 300
-  }
-
-  logger.info('Signed url', { todoToGetSignedUrl })
-
-  const uploadUrl = s3.getSignedUrl('putObject', todoToGetSignedUrl)
+  const uploadUrl = getSignedUrl(todoId)
 
   logger.info('Successfully returned', { uploadUrl })
 

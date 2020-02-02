@@ -26,18 +26,22 @@ export async function createTodo(
   })
 }
 
-export async function deleteTodo(todoId) {
+export async function deleteTodo(todoId: string) {
   return todoAccess.deleteTodoData(todoId)
 }
 
-export async function getTodo(todoId): Promise<TodoItem> {
+export function getSignedUrl(todoId: string): string {
+  return todoAccess.getSignedUrlData(todoId)
+}
+
+export async function getTodo(todoId: string): Promise<TodoItem> {
   return todoAccess.getTodoData(todoId)
 }
 
-export async function getTodos(userId): Promise<TodoItem[]> {
+export async function getTodos(userId: string): Promise<TodoItem[]> {
   return todoAccess.getTodosData(userId)
 }
 
-export async function updateTodo(updatedItem) {
+export async function updateTodo(updatedItem: TodoItem) {
   return todoAccess.updateTodoData(updatedItem)
 }
