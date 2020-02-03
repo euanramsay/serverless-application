@@ -6,14 +6,9 @@ import {
   APIGatewayProxyResult
 } from 'aws-lambda'
 
-import { DynamoDB } from 'aws-sdk'
 import { createLogger } from '../../utils/logger'
+import { getTodos } from '../../businessLogic/todos'
 import { getUserIdFromJwt } from '../../auth/utils'
-
-const docClient = new DynamoDB.DocumentClient()
-
-const TableName = process.env.TODOS_TABLE
-const IndexName = process.env.INDEX_NAME
 
 const logger = createLogger('http')
 
@@ -25,16 +20,7 @@ export const handler: APIGatewayProxyHandler = async (
 
     logger.info('Getting todos for user', { userId })
 
-    const todoQuery = {
-      TableName,
-      IndexName,
-      KeyConditionExpression: 'userId = :userIdValue',
-      ExpressionAttributeValues: { ':userIdValue': userId }
-    }
-
-    logger.info('Querying', { todoQuery })
-
-    const { Items } = await docClient.query(todoQuery).promise()
+    const Items = await getTodos(userId)
 
     logger.info('Successfully returned', { Items })
 

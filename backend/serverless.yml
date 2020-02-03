@@ -4,6 +4,26 @@ service:
 plugins:
   - serverless-webpack
   - serverless-iam-roles-per-function
+  - serverless-reqvalidator-plugin
+  - serverless-aws-documentation
+
+package:
+  individually: true
+
+custom:
+  documentation:
+    api:
+      info:
+        version: v1.0.0
+        title: Todos API
+        description: Serverless todos application
+    models:
+      - name: CreateTodo
+        contentType: application/json
+        schema: ${file(models/create-todo-request.json)}
+      - name: UpdateTodo
+        contentType: application/json
+        schema: ${file(models/update-todo-request.json)}
 
 provider:
   name: aws
@@ -11,6 +31,10 @@ provider:
 
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
+
+  tracing:
+    lambda: true
+    apiGateway: true
 
   environment:
     TODOS_TABLE: Todos-${self:provider.stage}
@@ -33,6 +57,12 @@ functions:
       - Effect: Allow
         Action: dynamodb:Query
         Resource: ${self:provider.environment.TODOS_TABLE_ARN}/index/${self:provider.environment.INDEX_NAME}
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
   CreateTodo:
     handler: src/lambda/http/createTodo.handler
@@ -41,24 +71,48 @@ functions:
           method: post
           path: todos
           cors: true
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Create todo
+            description: Create a new todo
+            requestModels:
+              'application/json': CreateTodo
     iamRoleStatements:
       - Effect: Allow
         Action: dynamodb:PutItem
         Resource: ${self:provider.environment.TODOS_TABLE_ARN}
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
     events:
       - http:
-          method: put
+          method: any
           path: todos/{todoId}
           cors: true
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Update todo
+            description: Update a todo
+            requestModels:
+              'application/json': UpdateTodo
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:GetItem
           - dynamodb:UpdateItem
         Resource: ${self:provider.environment.TODOS_TABLE_ARN}
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
   DeleteTodo:
     handler: src/lambda/http/deleteTodo.handler
@@ -71,6 +125,12 @@ functions:
       - Effect: Allow
         Action: dynamodb:DeleteItem
         Resource: ${self:provider.environment.TODOS_TABLE_ARN}
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
   GenerateUploadUrl:
     handler: src/lambda/http/generateUploadUrl.handler
@@ -79,9 +139,25 @@ functions:
           method: post
           path: todos/{todoId}/attachment
           cors: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
 resources:
   Resources:
+    RequestBodyValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: 'request-body-validator'
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
+
     TodoDynamoDBTable:
       Type: AWS::DynamoDB::Table
       Properties:
