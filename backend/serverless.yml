@@ -32,6 +32,10 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
 
+  tracing:
+    lambda: true
+    apiGateway: true
+
   environment:
     TODOS_TABLE: Todos-${self:provider.stage}
     TODOS_TABLE_ARN: 'arn:aws:dynamodb:us-east-1:*:table/${self:provider.environment.TODOS_TABLE}'
@@ -53,6 +57,12 @@ functions:
       - Effect: Allow
         Action: dynamodb:Query
         Resource: ${self:provider.environment.TODOS_TABLE_ARN}/index/${self:provider.environment.INDEX_NAME}
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
   CreateTodo:
     handler: src/lambda/http/createTodo.handler
@@ -71,6 +81,12 @@ functions:
       - Effect: Allow
         Action: dynamodb:PutItem
         Resource: ${self:provider.environment.TODOS_TABLE_ARN}
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
@@ -91,6 +107,12 @@ functions:
           - dynamodb:GetItem
           - dynamodb:UpdateItem
         Resource: ${self:provider.environment.TODOS_TABLE_ARN}
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
   DeleteTodo:
     handler: src/lambda/http/deleteTodo.handler
@@ -103,6 +125,12 @@ functions:
       - Effect: Allow
         Action: dynamodb:DeleteItem
         Resource: ${self:provider.environment.TODOS_TABLE_ARN}
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
   GenerateUploadUrl:
     handler: src/lambda/http/generateUploadUrl.handler
@@ -111,6 +139,13 @@ functions:
           method: post
           path: todos/{todoId}/attachment
           cors: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action: xray:PutTelemetryRecords
+        Resource: '*'
+      - Effect: Allow
+        Action: xray:PutTraceSegments
+        Resource: '*'
 
 resources:
   Resources:

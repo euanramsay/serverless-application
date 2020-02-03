@@ -1,12 +1,12 @@
-import * as AWS from 'aws-sdk'
-
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { TodoItem } from '../models/TodoItem'
 import { createLogger } from '../utils/logger'
 
-// import * as AWSXRay from 'aws-xray-sdk'
+// Using require as a workaround, I could not get this to work using import
+// Also using aws-xray-sdk-core, I could not get this to work using aws-xray-sdk
+const AWSXRay = require('aws-xray-sdk-core')
+const AWS = AWSXRay.captureAWS(require('aws-sdk'))
 
-// const XAWS = AWSXRay.captureAWS(AWS)
 const logger = createLogger('dataLayer')
 
 export class TodoAccess {
