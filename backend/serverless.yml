@@ -92,7 +92,7 @@ functions:
     handler: src/lambda/http/updateTodo.handler
     events:
       - http:
-          method: put
+          method: any
           path: todos/{todoId}
           cors: true
           reqValidatorName: RequestBodyValidator

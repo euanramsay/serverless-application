@@ -103,11 +103,16 @@ export class TodoAccess {
     logger.info('Updating', { updatedItem })
 
     const { todoId, dueDate, done, name } = updatedItem
+
+    // Workaround to allow tick boxes in UI to work
+    const updateExpression = dueDate
+      ? 'set dueDate = :t, done = :d, #n = :n'
+      : 'set done = :d, #n = :n'
     const updateParams = {
       TableName: this.todosTable,
       Key: { todoId },
       ExpressionAttributeNames: { '#n': 'name' },
-      UpdateExpression: 'set dueDate = :t, done = :d, #n = :n',
+      UpdateExpression: updateExpression,
       ExpressionAttributeValues: {
         ':t': dueDate,
         ':d': done,
